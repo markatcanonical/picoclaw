@@ -67,3 +67,9 @@ web/backend/dist/*
 .claude/
 
 docker/data
+
+# Workshop
+.workshop.lock
+
+# Snap package
+picoclaw_*.snap
