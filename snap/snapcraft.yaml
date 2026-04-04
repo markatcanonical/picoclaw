@@ -24,6 +24,12 @@ apps:
       - network-bind
       - home
       - removable-media
+  picoclaw-launcher:
+    command: bin/picoclaw-launcher
+    plugs:
+      - network
+      - network-bind
+      - home
   picoclaw-launcher-tui:
     command: bin/picoclaw-launcher-tui
     plugs:
@@ -37,17 +43,25 @@ parts:
     source: .
     build-snaps:
       - go
+      - node/22/stable
     build-packages:
       - make
     override-build: |
       export GO=/snap/bin/go
       export PATH=/snap/bin:$PATH
       
+      # The web frontend requires pnpm to build
+      export npm_config_prefix=$CRAFT_PART_BUILD
+      npm install -g pnpm
+      export PATH=$CRAFT_PART_BUILD/bin:$PATH
+
       # The Makefile uses `go generate` which expects the workspace directory
       make build
+      make build-launcher
       make build-launcher-tui
       
       # Install built binaries
       mkdir -p $CRAFT_PART_INSTALL/bin
       cp -L build/picoclaw $CRAFT_PART_INSTALL/bin/picoclaw
+      cp -L build/picoclaw-launcher $CRAFT_PART_INSTALL/bin/picoclaw-launcher
       cp -L build/picoclaw-launcher-tui $CRAFT_PART_INSTALL/bin/picoclaw-launcher-tui
