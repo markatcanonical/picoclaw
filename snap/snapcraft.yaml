@@ -24,18 +24,27 @@ apps:
       - network-bind
       - home
       - removable-media
+    environment:
+      PICOCLAW_CONFIG: $SNAP_COMMON/config.json
+      PICOCLAW_HOME: $SNAP_COMMON
   picoclaw-launcher:
     command: bin/picoclaw-launcher
     plugs:
       - network
       - network-bind
       - home
+    environment:
+      PICOCLAW_CONFIG: $SNAP_COMMON/config.json
+      PICOCLAW_HOME: $SNAP_COMMON
   picoclaw-launcher-tui:
     command: bin/picoclaw-launcher-tui
     plugs:
       - network
       - network-bind
       - home
+    environment:
+      PICOCLAW_CONFIG: $SNAP_COMMON/config.json
+      PICOCLAW_HOME: $SNAP_COMMON
 
 parts:
   picoclaw:
