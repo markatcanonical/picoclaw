@@ -64,12 +64,12 @@ cmd/telegram/
 web/backend/dist/*
 !web/backend/dist/.gitkeep
 
+.workshop.lock
+picoclaw_*.snap
+
 .claude/
 
 docker/data
 
-# Workshop
-.workshop.lock
+.omc/
 
-# Snap package
-picoclaw_*.snap
