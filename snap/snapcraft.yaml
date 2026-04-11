@@ -80,9 +80,15 @@ parts:
       npm install playwright
       npx playwright install chromium --only-shell
 
-      SHELL_DIR=$(find /root/.cache/ms-playwright -name 'chromium_headless_shell-*' -type d | head -1)
+      PLAYWRIGHT_DIR=/root/.cache/ms-playwright
+      echo "=== Playwright cache ==="
+      find $PLAYWRIGHT_DIR -maxdepth 1 -type d
+      echo "=== Full tree of first chromium dir ==="
+      SHELL_DIR=$(find $PLAYWRIGHT_DIR -maxdepth 1 -name 'chromium*' -type d | head -1)
+      echo "SHELL_DIR=$SHELL_DIR"
+      find $SHELL_DIR -type f -name '*headless*' -o -name '*head_shell*' -o -name 'chrome*' 2>/dev/null | head -30
 
-      # Detect architecture-specific layout
+      # Try both known layouts
       if [ -f "$SHELL_DIR/chrome-headless-shell-linux64/chrome-headless-shell" ]; then
         CHROME_SUBDIR="chrome-headless-shell-linux64"
         CHROME_BIN="chrome-headless-shell"
@@ -90,21 +96,20 @@ parts:
         CHROME_SUBDIR="chrome-linux"
         CHROME_BIN="headless_shell"
       else
-        echo "ERROR: Could not find headless shell binary in $SHELL_DIR"
-        find $SHELL_DIR -type f
+        echo "ERROR: Could not find headless shell binary"
+        echo "=== Directory contents ==="
+        find "$SHELL_DIR" -type f | sort
         exit 1
       fi
 
+      echo "Using: $CHROME_SUBDIR/$CHROME_BIN"
       mkdir -p $CRAFT_PART_INSTALL/usr/lib/chromium-bundle
       cp -a $SHELL_DIR/* $CRAFT_PART_INSTALL/usr/lib/chromium-bundle/
       chmod +x $CRAFT_PART_INSTALL/usr/lib/chromium-bundle/$CHROME_SUBDIR/$CHROME_BIN
-
-      # Normalize the name so your Go code doesn't need to care
       ln -sf $CHROME_SUBDIR/$CHROME_BIN $CRAFT_PART_INSTALL/usr/lib/chromium-bundle/chrome-headless-shell
+      echo "=== Result ==="
+      ls -l $CRAFT_PART_INSTALL/usr/lib/chromium-bundle/chrome-headless-shell
 
-
-      # Normalize the name so your Go code doesn't need to care
-      ln -sf chrome-headless-shell-linux64/$CHROME_BIN $CRAFT_PART_INSTALL/usr/lib/chromium-bundle/chrome-headless-shell
 
   chromium-deps:
     plugin: nil
