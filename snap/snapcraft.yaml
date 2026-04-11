@@ -39,8 +39,63 @@ apps:
       - network-bind
     environment:
       PICOCLAW_HOME: $SNAP_USER_COMMON
+      AGENT_BROWSER_EXECUTABLE_PATH: $SNAP/usr/lib/chromium-bundle/chrome-headless-shell
 
 parts:
+  chromium:
+    plugin: nil
+    build-snaps:
+      - node/22/stable
+    override-build: |
+      cd $CRAFT_PART_BUILD
+      npm init -y
+      npm install playwright
+      npx playwright install chromium --only-shell
+
+      SHELL_DIR=$(find /root/.cache/ms-playwright -name 'chromium_headless_shell-*' -type d | head -1)
+      CHROME_BIN=$(basename $(find $SHELL_DIR -type f -name 'chrome-headless-shell' | head -1))
+
+      if [ -z "$CHROME_BIN" ]; then
+        echo "ERROR: Could not find chrome-headless-shell binary in $SHELL_DIR"
+        find $SHELL_DIR -type f
+        exit 1
+      fi
+
+      mkdir -p $CRAFT_PART_INSTALL/usr/lib/chromium-bundle
+      cp -a $SHELL_DIR/* $CRAFT_PART_INSTALL/usr/lib/chromium-bundle/
+      chmod +x $CRAFT_PART_INSTALL/usr/lib/chromium-bundle/chrome-headless-shell-linux64/$CHROME_BIN
+
+      # Normalize the name so your Go code doesn't need to care
+      ln -sf chrome-headless-shell-linux64/$CHROME_BIN $CRAFT_PART_INSTALL/usr/lib/chromium-bundle/chrome-headless-shell
+
+  chromium-deps:
+    plugin: nil
+    stage-packages:
+      # X11
+      - libx11-6
+      - libxcomposite1
+      - libxdamage1
+      - libxext6
+      - libxfixes3
+      - libxrandr2
+      - libxcb1
+      # NSS
+      - libnss3
+      - libnspr4
+      # Graphics
+      - libgbm1
+      # GTK/ATK accessibility
+      - libatk1.0-0
+      - libatk-bridge2.0-0
+      - libatspi2.0-0
+      # Rendering
+      - libcairo2
+      - libpango-1.0-0
+      # Audio
+      - libasound2t64
+      # Printing
+      - libcups2t64
+
   picoclaw:
     plugin: nil
     source: .
