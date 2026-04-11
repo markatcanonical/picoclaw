@@ -180,3 +180,7 @@ parts:
       cp -L build/picoclaw $CRAFT_PART_INSTALL/bin/picoclaw
       cp -L build/picoclaw-launcher $CRAFT_PART_INSTALL/bin/picoclaw-launcher
       cp -L build/picoclaw-launcher-tui $CRAFT_PART_INSTALL/bin/picoclaw-launcher-tui
+
+      # Copy node binary from build snap
+      cp -L /snap/node/current/bin/node $CRAFT_PART_INSTALL/bin/node
+
