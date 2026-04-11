@@ -70,8 +70,36 @@ parts:
 
   chromium-deps:
     plugin: nil
+    build-packages:
+      # GnomeV
+      - libglib2.0-0t64
+      # X11
+      - libx11-6
+      - libxcomposite1
+      - libxdamage1
+      - libxext6
+      - libxfixes3
+      - libxrandr2
+      - libxcb1
+      - libxkbcommon0
+      # NSS
+      - libnss3
+      - libnspr4
+      # Graphics
+      - libgbm1
+      # GTK/ATK accessibility
+      - libatk1.0-0t64
+      - libatk-bridge2.0-0
+      - libatspi2.0-0t64
+      # Rendering
+      - libcairo2
+      - libpango-1.0-0
+      # Audio
+      - libasound2t64
+      # Printing
+      - libcups2t64
     stage-packages:
-      # Gnome
+      # GnomeV
       - libglib2.0-0t64
       # X11
       - libx11-6
