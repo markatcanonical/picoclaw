@@ -46,30 +46,6 @@ parts:
     plugin: nil
     build-snaps:
       - node/22/stable
-    override-build: |
-      cd $CRAFT_PART_BUILD
-      npm init -y
-      npm install playwright
-      npx playwright install chromium --only-shell
-
-      SHELL_DIR=$(find /root/.cache/ms-playwright -name 'chromium_headless_shell-*' -type d | head -1)
-      CHROME_BIN=$(basename $(find $SHELL_DIR -type f -name 'chrome-headless-shell' | head -1))
-
-      if [ -z "$CHROME_BIN" ]; then
-        echo "ERROR: Could not find chrome-headless-shell binary in $SHELL_DIR"
-        find $SHELL_DIR -type f
-        exit 1
-      fi
-
-      mkdir -p $CRAFT_PART_INSTALL/usr/lib/chromium-bundle
-      cp -a $SHELL_DIR/* $CRAFT_PART_INSTALL/usr/lib/chromium-bundle/
-      chmod +x $CRAFT_PART_INSTALL/usr/lib/chromium-bundle/chrome-headless-shell-linux64/$CHROME_BIN
-
-      # Normalize the name so your Go code doesn't need to care
-      ln -sf chrome-headless-shell-linux64/$CHROME_BIN $CRAFT_PART_INSTALL/usr/lib/chromium-bundle/chrome-headless-shell
-
-  chromium-deps:
-    plugin: nil
     build-packages:
       # GnomeV
       - libglib2.0-0t64
@@ -98,6 +74,40 @@ parts:
       - libasound2t64
       # Printing
       - libcups2t64
+    override-build: |
+      cd $CRAFT_PART_BUILD
+      npm init -y
+      npm install playwright
+      npx playwright install chromium --only-shell
+
+      SHELL_DIR=$(find /root/.cache/ms-playwright -name 'chromium_headless_shell-*' -type d | head -1)
+
+      # Detect architecture-specific layout
+      if [ -f "$SHELL_DIR/chrome-headless-shell-linux64/chrome-headless-shell" ]; then
+        CHROME_SUBDIR="chrome-headless-shell-linux64"
+        CHROME_BIN="chrome-headless-shell"
+      elif [ -f "$SHELL_DIR/chrome-linux/headless_shell" ]; then
+        CHROME_SUBDIR="chrome-linux"
+        CHROME_BIN="headless_shell"
+      else
+        echo "ERROR: Could not find headless shell binary in $SHELL_DIR"
+        find $SHELL_DIR -type f
+        exit 1
+      fi
+
+      mkdir -p $CRAFT_PART_INSTALL/usr/lib/chromium-bundle
+      cp -a $SHELL_DIR/* $CRAFT_PART_INSTALL/usr/lib/chromium-bundle/
+      chmod +x $CRAFT_PART_INSTALL/usr/lib/chromium-bundle/$CHROME_SUBDIR/$CHROME_BIN
+
+      # Normalize the name so your Go code doesn't need to care
+      ln -sf $CHROME_SUBDIR/$CHROME_BIN $CRAFT_PART_INSTALL/usr/lib/chromium-bundle/chrome-headless-shell
+
+
+      # Normalize the name so your Go code doesn't need to care
+      ln -sf chrome-headless-shell-linux64/$CHROME_BIN $CRAFT_PART_INSTALL/usr/lib/chromium-bundle/chrome-headless-shell
+
+  chromium-deps:
+    plugin: nil
     stage-packages:
       # GnomeV
       - libglib2.0-0t64
