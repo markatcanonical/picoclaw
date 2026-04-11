@@ -80,15 +80,15 @@ parts:
       npm install playwright
       npx playwright install chromium --only-shell
 
-      PLAYWRIGHT_DIR=/root/.cache/ms-playwright
-      echo "=== Playwright cache ==="
-      find $PLAYWRIGHT_DIR -maxdepth 1 -type d
-      echo "=== Full tree of first chromium dir ==="
-      SHELL_DIR=$(find $PLAYWRIGHT_DIR -maxdepth 1 -name 'chromium*' -type d | head -1)
-      echo "SHELL_DIR=$SHELL_DIR"
-      find $SHELL_DIR -type f -name '*headless*' -o -name '*head_shell*' -o -name 'chrome*' 2>/dev/null | head -30
+      # Install agent-browser locally (so we can copy it into the snap)
+      npm install agent-browser
+      AGENT_BIN=$(node -e "console.log(require.resolve('agent-browser/bin/agent-browser'))")
+      echo "agent-browser entry: $AGENT_BIN"
 
-      # Try both known layouts
+      # Find chromium headless shell
+      PLAYWRIGHT_DIR=/root/.cache/ms-playwright
+      SHELL_DIR=$(find $PLAYWRIGHT_DIR -maxdepth 1 -name 'chromium*' -type d | head -1)
+
       if [ -f "$SHELL_DIR/chrome-headless-shell-linux64/chrome-headless-shell" ]; then
         CHROME_SUBDIR="chrome-headless-shell-linux64"
         CHROME_BIN="chrome-headless-shell"
@@ -97,18 +97,29 @@ parts:
         CHROME_BIN="headless_shell"
       else
         echo "ERROR: Could not find headless shell binary"
-        echo "=== Directory contents ==="
-        find "$SHELL_DIR" -type f | sort
         exit 1
       fi
 
-      echo "Using: $CHROME_SUBDIR/$CHROME_BIN"
+      # Copy chromium bundle
       mkdir -p $CRAFT_PART_INSTALL/usr/lib/chromium-bundle
       cp -a $SHELL_DIR/* $CRAFT_PART_INSTALL/usr/lib/chromium-bundle/
       chmod +x $CRAFT_PART_INSTALL/usr/lib/chromium-bundle/$CHROME_SUBDIR/$CHROME_BIN
       ln -sf $CHROME_SUBDIR/$CHROME_BIN $CRAFT_PART_INSTALL/usr/lib/chromium-bundle/chrome-headless-shell
+
+      # Copy agent-browser + node_modules into snap
+      mkdir -p $CRAFT_PART_INSTALL/usr/lib/agent-browser
+      cp -a node_modules $CRAFT_PART_INSTALL/usr/lib/agent-browser/
+
+      # Create wrapper script that invokes via node
+      mkdir -p $CRAFT_PART_INSTALL/usr/bin
+      printf '#!/bin/sh\nexec node /usr/lib/agent-browser/node_modules/agent-browser/bin/agent-browser "$@"\n' > $CRAFT_PART_INSTALL/usr/bin/agent-browser
+      chmod +x $CRAFT_PART_INSTALL/usr/bin/agent-browser
+
+      echo "=== agent-browser wrapper ==="
+      cat $CRAFT_PART_INSTALL/usr/bin/agent-browser
       echo "=== Result ==="
       ls -l $CRAFT_PART_INSTALL/usr/lib/chromium-bundle/chrome-headless-shell
+      ls -l $CRAFT_PART_INSTALL/usr/bin/agent-browser
 
 
   chromium-deps:
