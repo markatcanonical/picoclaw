@@ -54,9 +54,9 @@ parts:
       - node/22/stable
     build-packages:
       - make
-      -libolm-dev
+      - libolm-dev
     stage-packages:
-      -libolm3
+      - libolm3
     override-build: |
       export GO=/snap/bin/go
       export PATH=/snap/bin:$PATH
@@ -80,7 +80,7 @@ parts:
       # Copy node binary from build snap
       cp -L /snap/node/current/bin/node $CRAFT_PART_INSTALL/bin/node
 
-      # Place ws in the snap so picoclaw can use it
-      mkdir -p $CRAFT_PART_INSTALL/lib/node_modules
-      npm install --prefix $CRAFT_PART_INSTALL/lib/node_modules ws
+      # Place ws in the snap so picoclaw can use it # perhaps not needed, node 22 includes WS
+      #mkdir -p $CRAFT_PART_INSTALL/lib/node_modules
+      #npm install --prefix $CRAFT_PART_INSTALL/lib/node_modules ws
 
