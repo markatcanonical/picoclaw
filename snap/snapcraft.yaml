@@ -60,6 +60,7 @@ parts:
     override-build: |
       export GO=/snap/bin/go
       export PATH=/snap/bin:$PATH
+      export CGO_ENABLED=1
       
       # The web frontend requires pnpm to build
       export npm_config_prefix=$CRAFT_PART_BUILD
