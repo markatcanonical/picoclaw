@@ -25,6 +25,8 @@ apps:
       - removable-media
     environment:
       PICOCLAW_HOME: $SNAP_USER_COMMON
+      NODE_PATH: $SNAP/node_modules
+
   launcher:
     command: bin/picoclaw-launcher
     plugs:
@@ -32,127 +34,20 @@ apps:
       - network-bind
     environment:
       PICOCLAW_HOME: $SNAP_USER_COMMON
+      NODE_PATH: $SNAP/node_modules
+
   tui:
     command: bin/picoclaw-launcher-tui
     plugs:
       - network
       - network-bind
+      - shared-memory
+      - browser-support
     environment:
       PICOCLAW_HOME: $SNAP_USER_COMMON
-      AGENT_BROWSER_EXECUTABLE_PATH: $SNAP/usr/lib/chromium-bundle/chrome-headless-shell
+      NODE_PATH: $SNAP/node_modules
 
 parts:
-  chromium:
-    plugin: nil
-    build-snaps:
-      - node/22/stable
-    build-packages:
-      # GnomeV
-      - libglib2.0-0t64
-      # X11
-      - libx11-6
-      - libxcomposite1
-      - libxdamage1
-      - libxext6
-      - libxfixes3
-      - libxrandr2
-      - libxcb1
-      - libxkbcommon0
-      # NSS
-      - libnss3
-      - libnspr4
-      # Graphics
-      - libgbm1
-      # GTK/ATK accessibility
-      - libatk1.0-0t64
-      - libatk-bridge2.0-0
-      - libatspi2.0-0t64
-      # Rendering
-      - libcairo2
-      - libpango-1.0-0
-      # Audio
-      - libasound2t64
-      # Printing
-      - libcups2t64
-    override-build: |
-      cd $CRAFT_PART_BUILD
-      npm init -y
-      npm install playwright
-      npx playwright install chromium --only-shell
-
-      # Install agent-browser locally (so we can copy it into the snap)
-      npm install agent-browser
-      AGENT_BIN=$(node -e "console.log(require.resolve('agent-browser/bin/agent-browser'))")
-      echo "agent-browser entry: $AGENT_BIN"
-
-      # Find chromium headless shell
-      PLAYWRIGHT_DIR=/root/.cache/ms-playwright
-      SHELL_DIR=$(find $PLAYWRIGHT_DIR -maxdepth 1 -name 'chromium*' -type d | head -1)
-
-      if [ -f "$SHELL_DIR/chrome-headless-shell-linux64/chrome-headless-shell" ]; then
-        CHROME_SUBDIR="chrome-headless-shell-linux64"
-        CHROME_BIN="chrome-headless-shell"
-      elif [ -f "$SHELL_DIR/chrome-linux/headless_shell" ]; then
-        CHROME_SUBDIR="chrome-linux"
-        CHROME_BIN="headless_shell"
-      else
-        echo "ERROR: Could not find headless shell binary"
-        exit 1
-      fi
-
-      # Copy chromium bundle
-      mkdir -p $CRAFT_PART_INSTALL/usr/lib/chromium-bundle
-      cp -a $SHELL_DIR/* $CRAFT_PART_INSTALL/usr/lib/chromium-bundle/
-      chmod +x $CRAFT_PART_INSTALL/usr/lib/chromium-bundle/$CHROME_SUBDIR/$CHROME_BIN
-      ln -sf $CHROME_SUBDIR/$CHROME_BIN $CRAFT_PART_INSTALL/usr/lib/chromium-bundle/chrome-headless-shell
-
-      # Copy agent-browser + node_modules into snap
-      mkdir -p $CRAFT_PART_INSTALL/usr/lib/agent-browser
-      cp -a node_modules $CRAFT_PART_INSTALL/usr/lib/agent-browser/
-
-      # Create wrapper script that invokes via node
-      mkdir -p $CRAFT_PART_INSTALL/usr/bin
-      printf '#!/bin/sh\nexec node /usr/lib/agent-browser/node_modules/agent-browser/bin/agent-browser "$@"\n' > $CRAFT_PART_INSTALL/usr/bin/agent-browser
-      chmod +x $CRAFT_PART_INSTALL/usr/bin/agent-browser
-
-      echo "=== agent-browser wrapper ==="
-      cat $CRAFT_PART_INSTALL/usr/bin/agent-browser
-      echo "=== Result ==="
-      ls -l $CRAFT_PART_INSTALL/usr/lib/chromium-bundle/chrome-headless-shell
-      ls -l $CRAFT_PART_INSTALL/usr/bin/agent-browser
-
-
-  chromium-deps:
-    plugin: nil
-    stage-packages:
-      # GnomeV
-      - libglib2.0-0t64
-      # X11
-      - libx11-6
-      - libxcomposite1
-      - libxdamage1
-      - libxext6
-      - libxfixes3
-      - libxrandr2
-      - libxcb1
-      - libxkbcommon0
-      # NSS
-      - libnss3
-      - libnspr4
-      # Graphics
-      - libgbm1
-      # GTK/ATK accessibility
-      - libatk1.0-0t64
-      - libatk-bridge2.0-0
-      - libatspi2.0-0t64
-      # Rendering
-      - libcairo2
-      - libpango-1.0-0
-      # Audio
-      - libasound2t64
-      # Printing
-      - libcups2t64
-
   picoclaw:
     plugin: nil
     source: .
@@ -183,4 +78,8 @@ parts:
 
       # Copy node binary from build snap
       cp -L /snap/node/current/bin/node $CRAFT_PART_INSTALL/bin/node
+
+      # Place ws in the snap so picoclaw can use it
+      mkdir -p $CRAFT_PART_INSTALL/lib/node_modules
+      npm install --prefix $CRAFT_PART_INSTALL/lib/node_modules ws
 
