@@ -41,8 +41,6 @@ apps:
     plugs:
       - network
       - network-bind
-      - shared-memory
-      - browser-support
     environment:
       PICOCLAW_HOME: $SNAP_USER_COMMON
       NODE_PATH: $SNAP/node_modules
@@ -56,6 +54,9 @@ parts:
       - node/22/stable
     build-packages:
       - make
+      -libolm-dev
+    stage-packages:
+      -libolm3
     override-build: |
       export GO=/snap/bin/go
       export PATH=/snap/bin:$PATH
